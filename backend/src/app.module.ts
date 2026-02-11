@@ -15,11 +15,17 @@ import { ReportsModule } from './reports/reports.module';
     }),
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT || '3306', 10),
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
+      host: process.env.DB_HOST || process.env.MYSQLHOST,
+      port: parseInt(
+        process.env.DB_PORT || process.env.MYSQLPORT || '3306',
+        10,
+      ),
+      username: process.env.DB_USERNAME || process.env.MYSQLUSER,
+      password:
+        process.env.DB_PASSWORD ||
+        process.env.MYSQLPASSWORD ||
+        process.env.MYSQL_ROOT_PASSWORD,
+      database: process.env.DB_DATABASE || process.env.MYSQLDATABASE,
       autoLoadEntities: true,
       synchronize: true, // Be careful with this in production
     }),
