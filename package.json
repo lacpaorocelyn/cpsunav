@@ -1,0 +1,12 @@
+{
+  "name": "campushelper-root",
+  "private": true,
+  "scripts": {
+    "build": "pnpm --filter backend build",
+    "start": "pnpm --filter backend start:prod"
+  },
+  "engines": {
+    "node": "20.x"
+  },
+  "packageManager": "pnpm@10.2.1"
+}
