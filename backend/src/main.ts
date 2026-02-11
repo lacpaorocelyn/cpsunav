@@ -6,39 +6,45 @@ import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+
+  // Create the app with Express
   const app = await NestFactory.create(AppModule);
 
-  // BRUTE FORCE CORS MIDDLEWARE
-  // This ensures headers are set at the earliest possible moment
-  const expressApp = app.getHttpAdapter().getInstance();
-  expressApp.use((req, res, next) => {
-    const origin = req.headers.origin;
-    // Allow any origin for now to confirm connectivity
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    res.setHeader(
+  // 1. Manual CORS Headers (The most reliable way)
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header(
       'Access-Control-Allow-Methods',
-      'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+      'GET,PUT,POST,DELETE,PATCH,OPTIONS',
     );
-    res.setHeader(
+    res.header(
       'Access-Control-Allow-Headers',
-      'X-Requested-With, Content-Type, Authorization, Accept',
+      'Content-Type, Accept, Authorization, X-Requested-With',
     );
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-    // Immediately respond to preflight (OPTIONS) requests
+    // Handle Preflight
     if (req.method === 'OPTIONS') {
-      return res.status(204).send();
+      res.sendStatus(204);
+    } else {
+      next();
     }
-    next();
+  });
+
+  // 2. Also enable the built-in CORS as a secondary layer
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type,Accept,Authorization,X-Requested-With',
   });
 
   app.setGlobalPrefix('api');
 
+  // Railway expects the PORT env var, but we must default to 3000 to match your config
   const port = process.env.PORT || 3000;
 
-  // Bind to 0.0.0.0 for Railway networking
+  // IMPORTANT: 0.0.0.0 is often required for cloud deployments
   await app.listen(port, '0.0.0.0');
 
-  logger.log(`🚀 API is running on: http://0.0.0.0:${port}/api`);
+  logger.log(`🚀 API is running on: ${await app.getUrl()}`);
 }
 bootstrap();
