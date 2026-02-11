@@ -1,0 +1,7 @@
+# Node / JS ignores
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example

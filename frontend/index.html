@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CampusHelper | CPSU Kabankalan Navigator</title>
+    <meta
+      name="description"
+      content="Find buildings, offices, and facilities at Central Philippine State University Kabankalan Campus."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body class="h-screen flex flex-col overflow-hidden bg-slate-50">
+    <script>
+      // Auth Guard
+      if (!localStorage.getItem("campus_auth_token")) {
+        window.location.href = "landing.html";
+      }
+
+      function handleLogout() {
+        localStorage.removeItem("campus_auth_token");
+        localStorage.removeItem("campus_user");
+        window.location.href = "landing.html";
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        try {
+          const user = JSON.parse(localStorage.getItem("campus_user") || "{}");
+          const display = document.getElementById("student-id-display");
+          if (display) display.textContent = user.studentId || "STUDENT";
+        } catch (e) {
+          // fallback
+        }
+      });
+    </script>
+
+    <!-- Header/Navigation -->
+    <header
+      class="h-20 flex-none px-6 lg:px-12 flex items-center justify-between bg-white/95 backdrop-blur-md lg:border-b lg:border-slate-100 z-50"
+    >
+      <div class="flex items-center gap-4 group cursor-default">
+        <div
+          class="w-11 h-11 bg-linear-to-br from-brand-primary to-emerald-600 rounded-[1.1rem] flex items-center justify-center shadow-lg shadow-brand-primary/20 group-hover:rotate-6 transition-transform duration-300"
+        >
+          <i data-lucide="map-pin" class="text-white w-6 h-6"></i>
+        </div>
+        <div>
+          <h1
+            class="text-[22px] font-black font-outfit tracking-[-0.02em] text-slate-900 leading-tight"
+          >
+            CampusHelper
+          </h1>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span class="flex h-1.5 w-1.5 rounded-full bg-brand-primary"></span>
+            <p
+              class="text-[9px] font-black text-brand-primary uppercase tracking-[0.25em]"
+            >
+              Main Campus Navigator
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop Nav -->
+      <div
+        class="hidden lg:flex items-center bg-slate-100 p-1.5 rounded-2xl gap-1"
+      >
+        <button
+          id="btn-nav-map"
+          onclick="showMap()"
+          data-active="true"
+          class="nav-btn-desktop px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all"
+        >
+          <i data-lucide="map" class="w-4 h-4"></i> Map View
+        </button>
+        <button
+          id="btn-nav-list"
+          onclick="showListView()"
+          class="nav-btn-desktop px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all"
+        >
+          <i data-lucide="building-2" class="w-4 h-4"></i> Buildings List
+        </button>
+        <button
+          id="btn-nav-help"
+          onclick="showHelpView()"
+          class="nav-btn-desktop px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all"
+        >
+          <i data-lucide="circle-help" class="w-4 h-4"></i> Help
+        </button>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- User Profile Pill -->
+        <button
+          onclick="window.openProfileModal()"
+          class="hidden sm:flex items-center gap-3 pl-4 border-l border-slate-200 hover:opacity-80 transition-opacity cursor-pointer text-left"
+        >
+          <div class="text-right">
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1"
+            >
+              Student
+            </p>
+            <p
+              id="student-id-display"
+              class="text-sm font-bold text-slate-900 leading-none"
+            >
+              2024-XXXX
+            </p>
+          </div>
+          <div
+            class="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400"
+          >
+            <i data-lucide="user" class="w-5 h-5"></i>
+          </div>
+        </button>
+        <button
+          onclick="handleLogout()"
+          class="w-10 h-10 lg:w-auto lg:px-5 lg:py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-600 transition-all active:scale-95 shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2"
+          title="Logout"
+        >
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+          <span class="hidden lg:inline">Logout</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="grow flex flex-col relative">
+      <!-- Search Bar Section (Floating Overlay) -->
+      <div
+        class="absolute top-6 left-6 lg:left-12 z-20 w-[calc(100%-3rem)] max-w-lg floating-search-container"
+      >
+        <div
+          class="glass-panel rounded-2xl flex flex-col overflow-hidden border-white/40 lg:shadow-2xl"
+        >
+          <div class="relative flex items-center p-2 bg-white/50">
+            <i
+              data-lucide="search"
+              class="w-5 h-5 absolute left-6 text-slate-400"
+            ></i>
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Search buildings, offices..."
+              class="w-full pl-10 pr-4 py-2 bg-transparent rounded-xl text-xs focus:outline-none placeholder:text-slate-400 font-bold lg:text-sm lg:pl-12 lg:py-3"
+            />
+          </div>
+          <!-- Search Results Dropdown -->
+          <div
+            id="building-list"
+            class="max-h-[50vh] overflow-y-auto px-4 pt-4 pb-4 hidden space-y-3 bg-white/50 lg:border-t lg:border-slate-100 custom-scrollbar"
+          >
+            <!-- Search items will be injected here -->
+          </div>
+        </div>
+      </div>
+
+      <aside id="sidebar" class="hidden"></aside>
+
+      <!-- Map Area -->
+      <div class="grow relative">
+        <div id="map" class="absolute inset-0 z-0"></div>
+
+        <!-- Map Controls (Floating Overlay) -->
+        <div class="absolute top-24 right-6 lg:top-6 z-10 flex flex-col gap-2">
+          <button id="btn-location" class="map-control-btn" title="My Location">
+            <i data-lucide="navigation" class="w-6 h-6"></i>
+          </button>
+          <button
+            id="btn-report-init"
+            class="map-control-btn border-brand-primary/50 text-brand-primary"
+            title="Report Issue"
+          >
+            <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+          </button>
+        </div>
+
+        <!-- Pinpoint Hint (Visible only during report mode) -->
+        <div
+          id="pinpoint-hint"
+          class="absolute top-24 left-1/2 -translate-x-1/2 z-20 hidden"
+        >
+          <div
+            class="bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce"
+          >
+            <i data-lucide="map-pin" class="text-brand-primary w-5 h-5"></i>
+            <p class="text-xs font-black uppercase tracking-widest text-center">
+              Tap campus to pinpoint
+            </p>
+          </div>
+        </div>
+
+        <!-- Report Modal -->
+        <div
+          id="report-modal"
+          class="fixed inset-0 z-100 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm hidden transition-all"
+        >
+          <div
+            class="bg-white rounded-3xl w-full max-w-sm overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200"
+          >
+            <div class="p-6">
+              <div class="flex items-center justify-between mb-6">
+                <h3
+                  id="report-modal-title"
+                  class="text-xl font-black font-outfit text-slate-900"
+                >
+                  New Campus Report
+                </h3>
+                <button
+                  id="btn-report-close"
+                  class="text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+              </div>
+
+              <form id="report-form" class="space-y-4">
+                <input type="hidden" id="report-id" />
+                <input type="hidden" id="report-lat" />
+                <input type="hidden" id="report-lng" />
+
+                <div>
+                  <label
+                    class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2"
+                    >Issue Category</label
+                  >
+                  <select
+                    id="report-category"
+                    class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:outline-none focus:border-brand-primary transition-colors"
+                  >
+                    <option value="facility">Facility Issue</option>
+                    <option value="navigation">Incorrect Path</option>
+                    <option value="safety">Safety Concern</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2"
+                    >Short Title</label
+                  >
+                  <input
+                    type="text"
+                    id="report-title"
+                    placeholder="What's happening?"
+                    required
+                    class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:outline-none focus:border-brand-primary transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2"
+                    >Brief Description</label
+                  >
+                  <textarea
+                    id="report-desc"
+                    rows="3"
+                    placeholder="Provide more details..."
+                    required
+                    class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:outline-none focus:border-brand-primary transition-colors resize-none"
+                  ></textarea>
+                </div>
+
+                <button
+                  type="submit"
+                  id="btn-report-submit"
+                  class="w-full py-4 bg-brand-primary text-white font-black rounded-2xl hover:scale-[1.02] active:scale-95 transition-all text-sm uppercase tracking-widest"
+                >
+                  Submit Report
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile Modal -->
+        <div
+          id="profile-modal"
+          class="fixed inset-0 z-100 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm hidden transition-all"
+        >
+          <div
+            class="bg-white rounded-3xl w-full max-w-sm overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200"
+          >
+            <div class="p-6">
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-black font-outfit text-slate-900">
+                  Update Profile
+                </h3>
+                <button
+                  id="btn-profile-close"
+                  class="text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+              </div>
+
+              <form id="profile-form" class="space-y-4">
+                <div>
+                  <label
+                    class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2"
+                    >Student ID (Read-Only)</label
+                  >
+                  <input
+                    type="text"
+                    id="profile-student-id"
+                    disabled
+                    class="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-bold text-slate-500 cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2"
+                    >Full Name</label
+                  >
+                  <input
+                    type="text"
+                    id="profile-fullname"
+                    placeholder="Enter your full name"
+                    class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:outline-none focus:border-brand-primary transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2"
+                    >New Password (Optional)</label
+                  >
+                  <input
+                    type="password"
+                    id="profile-password"
+                    placeholder="Leave blank to keep current"
+                    class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:outline-none focus:border-brand-primary transition-colors"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  id="btn-profile-submit"
+                  class="w-full py-4 bg-brand-primary text-white font-black rounded-2xl hover:scale-[1.02] active:scale-95 transition-all text-sm uppercase tracking-widest"
+                >
+                  Save Changes
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Alert/Confirm Modal -->
+        <div
+          id="alert-modal"
+          class="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm hidden transition-all duration-300"
+        >
+          <div
+            class="bg-white rounded-[2rem] w-full max-w-[320px] overflow-hidden border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200"
+          >
+            <div class="p-8 text-center">
+              <div
+                id="alert-icon-container"
+                class="w-16 h-16 rounded-3xl bg-emerald-50 text-brand-primary flex items-center justify-center mx-auto mb-6"
+              >
+                <i id="alert-icon" data-lucide="check" class="w-8 h-8"></i>
+              </div>
+              <h3
+                id="alert-title"
+                class="text-xl font-black font-outfit text-slate-900 mb-2"
+              >
+                Notification
+              </h3>
+              <p
+                id="alert-msg"
+                class="text-sm text-slate-500 font-medium leading-relaxed mb-8"
+              >
+                Message goes here...
+              </p>
+
+              <div id="alert-actions" class="flex flex-col gap-3">
+                <button
+                  id="btn-alert-ok"
+                  class="w-full py-4 bg-brand-primary text-white font-black rounded-2xl hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-widest"
+                >
+                  Understood
+                </button>
+                <div id="confirm-actions" class="hidden flex-col gap-3">
+                  <button
+                    id="btn-confirm-yes"
+                    class="w-full py-4 bg-slate-900 text-white font-black rounded-2xl hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-widest"
+                  >
+                    Confirm Action
+                  </button>
+                  <button
+                    id="btn-confirm-no"
+                    class="w-full py-4 bg-slate-50 text-slate-400 font-black rounded-2xl hover:bg-slate-100 transition-all text-[10px] uppercase tracking-widest"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Info Card (Bottom Sheet on Mobile) -->
+        <div
+          id="info-card"
+          class="absolute bottom-6 left-6 right-6 lg:left-12 lg:right-auto lg:w-96 z-10 glass-panel rounded-3xl p-6 hidden bottom-sheet animate-in fade-in slide-in-from-bottom-10"
+        >
+          <div class="flex items-start justify-between">
+            <div class="pr-8">
+              <div
+                class="inline-flex px-2 py-0.5 rounded-full bg-brand-primary/10 text-brand-primary text-[10px] font-extrabold uppercase mb-2"
+              >
+                Location Details
+              </div>
+              <h2
+                id="card-name"
+                class="text-xl font-black text-slate-900 leading-tight font-outfit lg:text-2xl"
+              >
+                Building Name
+              </h2>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                id="minimize-card"
+                class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:text-slate-800 active:scale-95 transition-all md:hidden"
+                title="Minimize"
+              >
+                <i data-lucide="chevron-down" class="w-6 h-6"></i>
+              </button>
+              <button
+                id="close-card"
+                class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 active:scale-95 transition-all"
+                title="Close"
+              >
+                <i data-lucide="x" class="w-6 h-6"></i>
+              </button>
+            </div>
+          </div>
+          <div id="card-desc" class="mt-4 leading-relaxed">
+            <!-- Content will be injected -->
+          </div>
+
+          <div class="mt-6 flex gap-3 lg:mt-8">
+            <button
+              id="btn-directions"
+              class="grow py-3 bg-brand-primary text-white font-bold rounded-2xl lg:shadow-xl lg:shadow-brand-primary/20 hover:scale-[1.02] transition-all active:scale-95 flex items-center justify-center gap-2 text-sm lg:py-4 lg:text-base"
+            >
+              <i data-lucide="navigation" class="w-4 h-4 lg:w-5 lg:h-5"></i> Get
+              Directions
+            </button>
+            <button
+              id="btn-share"
+              class="w-12 h-12 flex items-center justify-center bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 active:scale-95 transition-all flex-none lg:w-14 lg:h-14"
+            >
+              <i data-lucide="share-2" class="w-5 h-5 lg:w-6 lg:h-6"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full Screen Overlays (Loaded Dynamically) -->
+      <div
+        id="list-overlay"
+        class="absolute inset-0 z-30 bg-slate-50/95 backdrop-blur-md hidden animate-in fade-in slide-in-from-bottom-5 duration-300"
+      ></div>
+
+      <div
+        id="help-overlay"
+        class="absolute inset-0 z-30 bg-slate-50/95 backdrop-blur-md hidden animate-in fade-in slide-in-from-bottom-5 duration-300"
+      ></div>
+    </main>
+
+    <!-- Mobile Navigation Bar -->
+    <nav
+      class="md:hidden flex-none h-20 bg-white flex items-center justify-around px-2 pb-2"
+    >
+      <button
+        id="nav-map"
+        data-active="true"
+        class="nav-btn-mobile flex flex-col items-center justify-center gap-1.5 px-6 group transition-all"
+      >
+        <div class="nav-indicator w-12 h-1 rounded-full mb-2"></div>
+        <i data-lucide="map" class="w-6 h-6"></i>
+        <span class="text-[10px] font-extrabold uppercase tracking-widest"
+          >Map</span
+        >
+      </button>
+      <button
+        id="nav-list"
+        class="nav-btn-mobile flex flex-col items-center justify-center gap-1.5 px-6 group transition-all"
+      >
+        <div class="nav-indicator w-12 h-1 rounded-full mb-2"></div>
+        <i data-lucide="building-2" class="w-6 h-6"></i>
+        <span class="text-[10px] font-extrabold uppercase tracking-widest"
+          >List</span
+        >
+      </button>
+      <button
+        id="nav-help"
+        class="nav-btn-mobile flex flex-col items-center justify-center gap-1.5 px-6 group transition-all"
+      >
+        <div class="nav-indicator w-12 h-1 rounded-full mb-2"></div>
+        <i data-lucide="help-circle" class="w-6 h-6"></i>
+        <span class="text-[10px] font-extrabold uppercase tracking-widest"
+          >Help</span
+        >
+      </button>
+    </nav>
+
+    <script type="module" src="./src/main.js"></script>
+
+    <!-- Final Flattener for Mobile -->
+    <style>
+      @media (max-width: 1023px) {
+        /* Reset shadows/filters universally */
+        *,
+        *::before,
+        *::after {
+          box-shadow: none !important;
+          -webkit-box-shadow: none !important;
+          filter: none !important;
+        }
+
+        /* Force flat layout structural elements */
+        #map,
+        #map .leaflet-container,
+        header,
+        nav,
+        main {
+          border-radius: 0 !important;
+          border: none !important;
+        }
+
+        /* White background panels with rounded corners */
+        .floating-search-container .glass-panel,
+        .map-control-btn {
+          border-radius: 1rem !important;
+          border: 1px solid rgba(0, 0, 0, 0.05) !important;
+          background-color: white !important;
+        }
+
+        /* RESTORE MARKER COLORS (Emerald circles with white icons) */
+        .custom-marker {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          width: 32px !important;
+          height: 32px !important;
+          background-color: #10b981 !important; /* Brand Emerald */
+          border-radius: 9999px !important;
+          color: white !important;
+          border: 3px solid white !important;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        /* Ensure icon inside marker is white and properly sized */
+        .custom-marker i,
+        .custom-marker svg {
+          width: 16px !important;
+          height: 16px !important;
+          color: white !important;
+          stroke: white !important;
+          stroke-width: 3px !important;
+        }
+
+        .user-location-marker {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          width: 24px !important;
+          height: 24px !important;
+          background-color: #3b82f6 !important; /* Blue 500 */
+          border-radius: 9999px !important;
+          border: 3px solid white !important;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        /* Search input specific */
+        #search-input {
+          border-radius: 0.75rem !important;
+          background: transparent !important;
+          color: #1e293b !important;
+        }
+
+        /* Prevent background colors leaking */
+        body,
+        main {
+          background-color: white !important;
+        }
+
+        /* Connected flat bottom sheet */
+        #info-card.bottom-sheet {
+          border-radius: 0 !important;
+          border-top: 2px solid #e2e8f0 !important; /* Slightly thicker silver border */
+          border-left: none !important;
+          border-right: none !important;
+          border-bottom: none !important;
+          bottom: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          width: 100% !important;
+          max-width: none !important;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          background-color: white !important;
+        }
+
+        /* Minimized State for Info Card */
+        #info-card.minimized {
+          padding-top: 0.75rem !important;
+          padding-bottom: 0.75rem !important;
+          transform: translateY(0) !important;
+        }
+
+        #info-card.minimized .pr-8 div:first-child,
+        #info-card.minimized #card-desc,
+        #info-card.minimized .mt-6 {
+          display: none !important;
+        }
+
+        #info-card.minimized #card-name {
+          font-size: 0.875rem !important;
+          margin-bottom: 0 !important;
+        }
+
+        #info-card.minimized #minimize-card i {
+          transform: rotate(180deg);
+        }
+      }
+    </style>
+  </body>
+</html>

@@ -1,0 +1,219 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
+@import "leaflet/dist/leaflet.css";
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+    --font-outfit: "Outfit", sans-serif;
+  }
+}
+
+@theme {
+  --color-brand-primary: #10b981; /* Emerald 500 */
+  --color-brand-secondary: #059669; /* Emerald 600 */
+  --color-brand-accent: #34d399; /* Emerald 400 */
+  --color-brand-dark: #064e3b; /* Emerald 900 */
+
+  --font-outfit: "Outfit", sans-serif;
+  --font-jakarta: "Plus Jakarta Sans", sans-serif;
+
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+@utility glass-panel {
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 25px -5px rgba(6, 78, 59, 0.05);
+}
+
+@utility glass {
+  @apply bg-white/70 backdrop-blur-2xl border border-white/20;
+}
+
+@utility text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-primary to-emerald-600;
+}
+
+/* Custom Leaflet Styling */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #f1f5f9;
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+  outline: none;
+}
+
+@media (min-width: 1024px) {
+  .leaflet-container {
+    border-radius: 1.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+}
+
+.leaflet-popup-content-wrapper {
+  @apply rounded-xl border-none shadow-2xl;
+}
+
+.leaflet-popup-tip {
+  @apply bg-white;
+}
+
+.custom-marker {
+  @apply flex items-center justify-center w-8 h-8 rounded-full bg-brand-primary text-white shadow-lg border-2 border-white;
+  pointer-events: none;
+}
+
+.leaflet-marker-icon {
+  cursor: pointer !important;
+}
+
+[data-lucide],
+.leaflet-marker-icon svg {
+  pointer-events: none !important;
+}
+
+.user-location-marker {
+  @apply flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 shadow-lg border-2 border-white relative;
+}
+
+.user-location-marker::after {
+  content: "";
+  @apply absolute inset-0 rounded-full bg-blue-500 animate-ping opacity-40;
+}
+.map-control-btn {
+  @apply w-12 h-12 rounded-2xl flex items-center justify-center hover:bg-brand-primary hover:text-white transition-all text-slate-600 active:scale-95;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Building Name Label (Tooltip above selected marker) */
+.building-label {
+  background-color: #0f172a !important; /* slate-900 */
+  color: white !important;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 14px !important;
+  border-radius: 12px !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.building-label::before {
+  border-top-color: #0f172a !important;
+}
+
+/* Glass-panel focus effect for search */
+.floating-search-container:focus-within .glass-panel {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  box-shadow:
+    0 0 0 4px rgba(16, 185, 129, 0.1),
+    0 20px 25px -5px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ========================================
+   MOBILE REFINEMENTS
+   ======================================== */
+@media (max-width: 1023px) {
+  /* 1. Map & Leaflet Specifics (Keeping these for map usability) */
+  .leaflet-container {
+    border-radius: 0 !important;
+  }
+
+  /* Mobile Nav Buttons */
+  .nav-btn-mobile {
+    opacity: 0.4;
+    color: #0f172a; /* slate-900 */
+  }
+
+  .nav-btn-mobile i,
+  .nav-btn-mobile span {
+    color: #0f172a; /* slate-900 */
+  }
+
+  .nav-btn-mobile .nav-indicator {
+    background-color: transparent;
+  }
+
+  .nav-btn-mobile[data-active] {
+    opacity: 1 !important;
+  }
+
+  .nav-btn-mobile[data-active] i,
+  .nav-btn-mobile[data-active] span {
+    color: #10b981 !important; /* brand-primary */
+  }
+
+  .nav-btn-mobile[data-active] .nav-indicator {
+    background-color: #10b981 !important; /* brand-primary */
+  }
+}
+
+/* ========================================
+   NAVIGATION: Desktop data-active styles
+   ======================================== */
+.nav-btn-desktop {
+  background-color: #f1f5f9 !important; /* slate-100 */
+  color: #0f172a !important; /* slate-900 */
+}
+
+.nav-btn-desktop:hover {
+  background-color: #e2e8f0 !important; /* slate-200 */
+}
+
+.nav-btn-desktop[data-active] {
+  background-color: #10b981 !important; /* brand-primary */
+  color: white !important;
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2) !important;
+  transform: scale(1.05);
+}
+
+.nav-btn-desktop[data-active]:hover {
+  background-color: #059669 !important; /* brand-secondary */
+}
+/* Custom Scrollbar for overlays */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0; /* slate-200 */
+  border-radius: 20px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1; /* slate-300 */
+}
+
+/* Accordion Specific - Hide default summary marker */
+summary::-webkit-details-marker {
+  display: none;
+}
+summary {
+  list-style: none;
+}
+/* Force Reload */

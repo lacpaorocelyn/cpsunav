@@ -1,0 +1,25 @@
+<div class="h-full flex flex-col max-w-4xl mx-auto px-6 py-8">
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h2 class="text-3xl font-black text-slate-900 font-outfit">
+        Campus Directory
+      </h2>
+      <p class="text-slate-500 font-medium text-sm">
+        Browse all buildings and facilities
+      </p>
+    </div>
+    <button
+      onclick="showMap()"
+      class="flex items-center gap-2 px-4 py-2 bg-white shadow-sm border border-slate-100 rounded-xl text-xs font-bold text-slate-600 hover:text-brand-primary transition-all"
+    >
+      <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Map
+    </button>
+  </div>
+
+  <div
+    id="directory-grid"
+    class="grow overflow-y-auto pr-2 space-y-8 pb-12 custom-scrollbar"
+  >
+    <!-- Categories and items will be injected here -->
+  </div>
+</div>

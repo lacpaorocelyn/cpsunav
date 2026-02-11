@@ -1,0 +1,26 @@
+# Ignore nested git repositories
+backend/.git
+frontend/.git
+
+# Node / JS ignores
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# NestJS build
+coverage/
