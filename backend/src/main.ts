@@ -4,9 +4,14 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: true, // Allow all origins in dev, can be restricted later
+    origin: [
+      'https://cpsunav.netlify.app',
+      'http://localhost:5173',
+      'http://localhost:3000',
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
   });
   app.setGlobalPrefix('api');
   await app.listen(process.env.PORT ?? 3000);
