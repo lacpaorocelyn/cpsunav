@@ -4,7 +4,7 @@
  */
 
 // Deployment Tip: Change this to your production URL when you go live!
-export const BASE_URL = "http://localhost:3000";
+export const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 /**
  * Universal request wrapper with Auth Token support
