@@ -5,14 +5,18 @@
 
 // Deployment Tip: Change this to your production URL when you go live!
 // Initial URL from environment or default
-const rawBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const rawBaseUrl = (
+  import.meta.env.VITE_API_URL || "http://localhost:3000"
+).trim();
 
-// Robust URL processing:
-// 1. If it doesn't start with http/https, prepend https:// (fixes Netlify relative path issues)
-// 2. Remove trailing slash to prevent double-slashes in requests
-export const BASE_URL = (
-  rawBaseUrl.startsWith("http") ? rawBaseUrl : `https://${rawBaseUrl}`
-).replace(/\/$/, "");
+// Typo-proof processing:
+// 1. Strip any existing http:// or https:// and any trailing slashes
+const cleanUrl = rawBaseUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
+
+// 2. Force the correct protocol
+export const BASE_URL = rawBaseUrl.includes("localhost")
+  ? `http://${cleanUrl}`
+  : `https://${cleanUrl}`;
 
 /**
  * Universal request wrapper with Auth Token support
